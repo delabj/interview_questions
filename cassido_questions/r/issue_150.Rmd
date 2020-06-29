@@ -1,0 +1,149 @@
+---
+title: "Issue 150 Interview Question"
+author: "Joshua de la Bruere"
+date: "6/29/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## This week’s question:
+Given string S, print the longest subsequence from S that contains alternating vowels and consonants. If multiple such subsequences exist having the same length, print the subsequence with the maximum sum of ASCII values of its characters.
+
+### Example:
+
+```
+$ alternateChars(‘ababab’)
+$ ‘ababab’
+```
+
+```
+$ alternateChars(‘cassidyisanerd’)
+$ ‘casiyisaner’
+```
+  
+## My Process. 
+
+I'm not actually familiar with a function in R that can determine if a letter is a vowel or consonant. 
+
+I think the easiest approach to writing my own function that does this is to make a list of vowels. I'm only going to be using lower case values as nothing in the prompt implies that I have to have both cases. 
+
+The function here will just check if the character is in this list of strings. 
+
+```{r}
+
+library(tidyverse) #This could be done is base, but I really really like piping
+ 
+is_vowel <-  function(letter){
+  
+
+  # Tests
+  if(typeof(letter) != "character"){
+    warning("The provided string was not a character\n")
+    return(NULL)
+  }
+  #send to lowercase
+  letter <- tolower(letter)
+  
+  
+  if(nchar(letter) != 1){
+    warning("The length of string was > 1\n")
+    return(NULL)
+  }
+  
+  isletter <- ifelse(letter %in% letters, "No", stop("Non letter character provided"))
+  
+  list_of_letters <- c("a", "e", "i", "o", "u")
+  
+  val <-  ifelse (letter %in% list_of_letters, TRUE, FALSE)
+  return(val)
+  }
+
+is_vowel("R")
+is_vowel("a")
+is_vowel("t")
+is_vowel("E")
+is_vowel(F)
+is_vowel("test")
+is_vowel("1")
+
+```
+You can see how I test the function to make sure it's working for a few cases. I added a few helpful warning messages, and cases where the function should return a null value.
+
+I think the next step I want to do is to `strsplit()` any given text into individual characters. I'm pretty sure that strsplit returns a list, but I want to double check that. 
+
+```{r}
+typeof(strsplit("test", split=""))
+
+```
+It does return a list which means I could use `lapply()` to apply my `is_vowel()` function to the list 
+
+```{r}
+string_test <- strsplit("test", split="")
+
+lapply(string_test, is_vowel)
+```
+I'd forgotten how `lapply()` works with if statements in functions. It's only checking the first entry on the list.  I may need to adjust my code at some point. I don't think this will be too much of an issue as I'll be validating my responses in my main function, but it's worth keeping in mine. 
+
+```{r}
+```
+
+
+```{r}
+ascii_sum <- function(string){
+  sum(utf8ToInt(string))
+}
+
+
+alternateChars <- function(word){
+  if(typeof(word) != "character"){
+    stop("The provided value was not a character\n")
+  }
+  string <- tibble(word_char=unlist(strsplit(word, split=""))) %>%
+    mutate(row_id = row_number(), 
+           vowel_status= is_vowel(word_char)) %>%
+    mutate(restart = ifelse(vowel_status != lag(vowel_status),  FALSE, TRUE), 
+           restart = replace_na(restart, FALSE))
+  
+  
+  string2 <- string %>%
+    filter(restart == TRUE) %>%
+    transmute(
+      sub_pattern = word,
+      start_row = lag (row_id),
+      start_row = replace_na(start_row,1), 
+      end_row = row_id-1,
+      length = row_id - start_row
+      
+    ) %>%
+    mutate(sub_pattern = str_sub(sub_pattern, start = start_row, end = end_row))%>% 
+    filter(length == max(length)) 
+
+  if(length(string2$length) > 1){
+    string3 <- string2 %>%
+      rowwise() %>%
+    mutate(ascii_val = ascii_sum(sub_pattern)) %>%
+      arrange(desc(ascii_val))
+    
+    longest_pattern = string3$sub_pattern[1]
+  }
+  else if(length(string2$length) == 0){
+    longest_pattern = word
+
+  }
+  else{
+    longest_pattern = string2$sub_pattern[1]
+  }
+  
+  return(longest_pattern)
+}
+
+test <- alternateChars("wordorororodd")
+alternateChars("azazazazazazazaz")
+alternateChars("wordwozd")
+alternateChars("1.32") # Should Break
+```
+
+
+This appears to be working, but I do have a few warnings I don't like to see. I think this will require a refactor of the if statements I used previously in `is_vowel()`
