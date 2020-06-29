@@ -25,6 +25,8 @@ $ ‘casiyisaner’
   
 ## My Process. 
 
+Looking at the examples I'm not sure that the second example fits with what the prompt asks. 
+
 I'm not actually familiar with a function in R that can determine if a letter is a vowel or consonant. 
 
 I think the easiest approach to writing my own function that does this is to make a list of vowels. I'm only going to be using lower case values as nothing in the prompt implies that I have to have both cases. 
